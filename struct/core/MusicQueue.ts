@@ -388,6 +388,7 @@ export class MusicQueue {
 
 			this.sendFinalizationMessage();
 
+			this.player.stop();
 			this.connection.destroy();
 
 			if (this.afkDestroyTimeout) clearTimeout(this.afkDestroyTimeout);

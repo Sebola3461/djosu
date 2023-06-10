@@ -24,6 +24,7 @@ import { AudioPlayerStatus } from "@discordjs/voice";
 import { addedToQueueEmbed } from "../utils/embeds/addedToQueueEmbed";
 import { colors } from "../constants/colors";
 import { infoEmbed } from "../utils/embeds/infoEmbed";
+import truncateString from "../utils/transformers/truncateString";
 
 export default new SlashCommand()
 	.setName("play")
@@ -84,7 +85,11 @@ export default new SlashCommand()
 			.addOptions(
 				search.data.beatmapsets.map((b, i) => {
 					return {
-						label: `${b.artist} - ${b.title}`,
+						label: truncateString(
+							`${b.artist} - ${b.title}`,
+							80,
+							true
+						),
 						description: `beatmapset by ${b.creator} | Status: ${b.status}`,
 						value: b.id.toString(),
 					};
