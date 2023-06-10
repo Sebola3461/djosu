@@ -390,6 +390,8 @@ export class MusicQueue {
 
 			this.connection.destroy();
 
+			if (this.afkDestroyTimeout) clearTimeout(this.afkDestroyTimeout);
+
 			djosu.queues.destroy(this.guildId);
 		} catch (e) {
 			void {};
