@@ -448,7 +448,7 @@ export class MusicQueue {
 		this.deleteBeatmap();
 
 		if (this.getSongIndex() + 1 == this.getSongs().length)
-			return this.finalizeQueue();
+			return this.finalizeQueue(true);
 
 		this.setSongIndex(this.getSongIndex() + 1);
 
@@ -460,7 +460,7 @@ export class MusicQueue {
 	previousSong() {
 		this.deleteBeatmap();
 
-		if (this.getSongIndex() - 1 < 0) return this.finalizeQueue();
+		if (this.getSongIndex() - 1 < 0) return this.finalizeQueue(true);
 
 		this.setSongIndex(this.getSongIndex() - 1);
 
