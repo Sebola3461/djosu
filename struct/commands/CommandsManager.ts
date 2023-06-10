@@ -21,11 +21,13 @@ export class CommandsManager {
 	}
 
 	private async loadCommands() {
-		const commandFiles = readdirSync(path.resolve("./commands"));
+		const commandFiles = readdirSync(
+			path.resolve(__dirname + "/../../commands")
+		);
 
 		for (const filename of commandFiles) {
 			const file = (await import(
-				path.join(path.resolve("./commands"), filename)
+				path.join(path.resolve(__dirname + "/../../commands"), filename)
 			)) as { default: SlashCommand };
 
 			this.rawCommands.push(file.default);
