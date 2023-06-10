@@ -40,6 +40,7 @@ export enum BeatmapLanguage {
 }
 
 export enum BeatmapStatus {
+	any = "any",
 	WIP = "wip",
 	Ranked = "ranked",
 	Pending = "pending",

@@ -17,7 +17,7 @@ import { readFileSync } from "fs";
 import { Song } from "../struct/core/Song";
 import { djosu } from "..";
 import osuApi from "../utils/fetcher/osuApi";
-import { Beatmapset } from "../types/beatmap";
+import { BeatmapStatus, Beatmapset } from "../types/beatmap";
 import { errorEmbed } from "../utils/embeds/errorEmbed";
 import { randomUUID } from "crypto";
 import { AudioPlayerStatus } from "@discordjs/voice";
@@ -56,6 +56,7 @@ export default new SlashCommand()
 		const search = await osuApi.fetch.searchBeatmapset({
 			query,
 			nsfw: true,
+			status: BeatmapStatus.any,
 		});
 
 		if (search.status != 200)
