@@ -125,6 +125,12 @@ export default new SlashCommand()
 		async function handleBeatmap(beatmapset: Beatmapset) {
 			if (guildQueue) guildQueue.clearDestroyTimeout();
 
+			if (beatmapset.beatmaps?.find((b) => b.total_length > 480))
+				return errorEmbed(command.editReply.bind(command), {
+					description:
+						"Beatmap too long! I can't play anything longer than 8 minutes.",
+				});
+
 			infoEmbed(command.editReply.bind(command), {
 				description: `Downloading beatmap...`,
 			});
