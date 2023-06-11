@@ -62,7 +62,7 @@ export class DjOsu extends Client {
 				this.commands.initializeCommands();
 				this.on("interactionCreate", this.handleInteraction.bind(this));
 
-				setInterval(this.updateStatus, 5000);
+				setInterval(() => this.updateStatus(), 5000);
 			})
 			.catch((error) =>
 				this.logger.printError("Cannot connect to discord:", error)
@@ -70,17 +70,18 @@ export class DjOsu extends Client {
 	}
 
 	private updateStatus() {
-		this.user?.setPresence({
-			status: "online",
-			activities: [
-				{
-					name: `Playing song for ${this.queues.getSize()} | ${
-						this.guilds.cache.size
-					} servers!`,
-					type: ActivityType.Playing,
-				},
-			],
-		});
+		if (this.user)
+			this.user.setPresence({
+				status: "online",
+				activities: [
+					{
+						name: `Playing song for ${this.queues.getSize()} | ${
+							this.guilds.cache.size
+						} servers!`,
+						type: ActivityType.Playing,
+					},
+				],
+			});
 	}
 
 	public async handleEmbedInteractions(button: ButtonInteraction) {
