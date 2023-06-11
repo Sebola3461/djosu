@@ -1,4 +1,5 @@
 import {
+	ActivityType,
 	ButtonInteraction,
 	Client,
 	ColorResolvable,
@@ -50,6 +51,8 @@ export class DjOsu extends Client {
 			this.logger.printSuccess(`Connected to lazer!`);
 		});
 
+		this.updateStatus.bind(this);
+
 		this.login(process.env.TOKEN)
 			.then(() => {
 				this.logger.printSuccess(
@@ -58,10 +61,26 @@ export class DjOsu extends Client {
 
 				this.commands.initializeCommands();
 				this.on("interactionCreate", this.handleInteraction.bind(this));
+
+				setInterval(this.updateStatus, 5000);
 			})
 			.catch((error) =>
 				this.logger.printError("Cannot connect to discord:", error)
 			);
+	}
+
+	private updateStatus() {
+		this.user?.setPresence({
+			status: "online",
+			activities: [
+				{
+					name: `Playing song for ${this.queues.getSize()} | ${
+						this.guilds.cache.size
+					} servers!`,
+					type: ActivityType.Playing,
+				},
+			],
+		});
 	}
 
 	public async handleEmbedInteractions(button: ButtonInteraction) {

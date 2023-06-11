@@ -26,6 +26,10 @@ export class MusicQueueManager {
 		return this.queues[queueIndex];
 	}
 
+	getSize() {
+		return this.queues.length;
+	}
+
 	setQueueTextChannel(channel: GuildTextBasedChannel) {
 		let queue = this.getQueue(channel.guildId);
 
