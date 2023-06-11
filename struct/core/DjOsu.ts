@@ -75,7 +75,7 @@ export class DjOsu extends Client {
 				status: "online",
 				activities: [
 					{
-						name: `Playing song for ${this.queues.getSize()} | ${
+						name: `Playing song for ${this.queues.getSize()} servers | ${
 							this.guilds.cache.size
 						} servers!`,
 						type: ActivityType.Playing,
