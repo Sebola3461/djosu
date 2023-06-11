@@ -19,5 +19,6 @@ export function errorEmbed(
 
 	replyFunction({
 		embeds: [embed],
+		components: [],
 	});
 }
