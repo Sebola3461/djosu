@@ -14,6 +14,7 @@ import {
 	EmbedBuilder,
 	GuildMember,
 	GuildTextBasedChannel,
+	Message,
 	TextBasedChannel,
 	VoiceBasedChannel,
 } from "discord.js";
@@ -49,11 +50,12 @@ export class MusicQueue {
 	private currentSongIndex = 0;
 
 	// message
-	private lastStatusMessageId: string = "";
+	private lastStatusMessage: Message | null = null;
 
 	private songs: Song[] = [];
 
 	private afkDestroyTimeout: NodeJS.Timeout | null = null;
+	private isLocked = false;
 
 	constructor(options: { bot: DjOsu; channel: VoiceBasedChannel }) {
 		this.player = createAudioPlayer({
@@ -77,8 +79,11 @@ export class MusicQueue {
 		this.sendUpdateMessage.bind(this);
 		this.play.bind(this);
 		this.isLoop.bind(this);
+		this.isQueueLocked.bind(this);
 
 		this.player.on("stateChange", (state, oldState) => {
+			if (this.isQueueLocked()) return;
+
 			if (
 				state.status == AudioPlayerStatus.Playing &&
 				oldState.status == AudioPlayerStatus.Idle
@@ -101,6 +106,16 @@ export class MusicQueue {
 				}
 			}
 		});
+	}
+
+	private setLock(locked: boolean) {
+		this.isLocked = locked;
+
+		return this;
+	}
+
+	private isQueueLocked() {
+		return this.isLocked;
 	}
 
 	public checkManagePermissionsFor(member: GuildMember) {
@@ -236,35 +251,31 @@ export class MusicQueue {
 	}
 
 	public sendUpdateMessage() {
-		this.textChannel.messages.delete(this.lastStatusMessageId).catch(() => {
-			void {};
-		});
+		if (this.lastStatusMessage)
+			this.lastStatusMessage.delete().catch(() => {
+				void {};
+			});
 
-		this.setLastMessageId.bind(this);
+		this.setLastMessage.bind(this);
 
 		this.textChannel
 			.send(this.generateQueueMessage())
-			.then((message) => this.setLastMessageId(message.id));
+			.then((message) => this.setLastMessage(message));
 	}
 
 	private sendFinalizationMessage() {
-		this.textChannel.messages.delete(this.lastStatusMessageId).catch(() => {
-			void {};
+		if (this.isQueueLocked()) return;
 
-			console.log("sent last message delete");
-		});
+		if (this.lastStatusMessage)
+			this.lastStatusMessage.delete().catch(() => {
+				void {};
+			});
 
-		this.setLastMessageId.bind(this);
-
-		console.log("sent last message");
-
-		this.textChannel
-			.send(this.generateClearQueueMessage())
-			.then((message) => this.setLastMessageId(message.id));
+		this.textChannel.send(this.generateClearQueueMessage());
 	}
 
-	private setLastMessageId(id: string) {
-		this.lastStatusMessageId = id;
+	private setLastMessage(message: Message) {
+		this.lastStatusMessage = message;
 
 		return this;
 	}
@@ -293,7 +304,7 @@ export class MusicQueue {
 		this.player.stop();
 		this.setSongs([] as Song[]);
 		this.setSongIndex(0);
-		this.lastStatusMessageId = "";
+		this.lastStatusMessage = null;
 
 		return this;
 	}
@@ -392,6 +403,8 @@ export class MusicQueue {
 			this.connection.destroy();
 
 			if (this.afkDestroyTimeout) clearTimeout(this.afkDestroyTimeout);
+
+			this.setLock(true);
 
 			djosu.queues.destroy(this.guildId);
 		} catch (e) {

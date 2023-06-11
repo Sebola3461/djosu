@@ -26,8 +26,12 @@ export class MusicQueueManager {
 		return this.queues[queueIndex];
 	}
 
-	getSize() {
-		return this.queues.length;
+	public get queuesLength() {
+		return this.queues.filter((q) => q !== null).length;
+	}
+
+	public getAll() {
+		return this.queues;
 	}
 
 	setQueueTextChannel(channel: GuildTextBasedChannel) {
