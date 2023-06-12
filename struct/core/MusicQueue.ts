@@ -260,7 +260,8 @@ export class MusicQueue {
 
 		this.textChannel
 			.send(this.generateQueueMessage())
-			.then((message) => this.setLastMessage(message));
+			.then((message) => this.setLastMessage(message))
+			.catch(() => void {});
 	}
 
 	private sendFinalizationMessage() {
@@ -271,7 +272,9 @@ export class MusicQueue {
 				void {};
 			});
 
-		this.textChannel.send(this.generateClearQueueMessage());
+		this.textChannel
+			.send(this.generateClearQueueMessage())
+			.catch(() => void {});
 	}
 
 	private setLastMessage(message: Message) {
