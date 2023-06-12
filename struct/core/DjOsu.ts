@@ -24,10 +24,10 @@ export class DjOsu extends Client {
 	constructor() {
 		super({
 			intents: [
-				"GuildMembers",
+				// "GuildMembers",
 				"GuildVoiceStates",
 				"Guilds",
-				"MessageContent",
+				// "MessageContent",
 			],
 		});
 	}
