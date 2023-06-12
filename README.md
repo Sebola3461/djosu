@@ -20,3 +20,7 @@
 ### Building
 
 -   Run `tsc` or `yarn build`
+
+### Creating commands
+
+See [Command Creation Guide](/CommandCreation.md)
