@@ -8,7 +8,7 @@ import { MusicQueue } from "./MusicQueue";
 import { Song } from "./Song";
 
 export class MusicQueueManager {
-	private queues: (MusicQueue | null)[] = [];
+	private queues: (MusicQueue | undefined)[] = [];
 	public djosu: DjOsu;
 
 	constructor(djosu: DjOsu) {
@@ -58,7 +58,7 @@ export class MusicQueueManager {
 			(q) => q != null && q.guildId == guildId
 		);
 
-		(this.queues[index] as any) = null;
+		delete this.queues[index];
 
 		return true;
 	}
