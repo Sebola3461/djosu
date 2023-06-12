@@ -38,6 +38,13 @@ export class SlashCommandSubcommandGroup {
 		return this._.description;
 	}
 
+	/**
+	 * # Internal usage
+	 */
+	public onlyBuilder() {
+		return this._;
+	}
+
 	public toJSON() {
 		return this._.toJSON();
 	}

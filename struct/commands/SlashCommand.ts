@@ -128,6 +128,20 @@ export class SlashCommand {
 		);
 	}
 
+	public addSubcommand(command: SlashCommandSubcommand) {
+		this._subcommands.push(command);
+		this._.addSubcommand(command.onlyBuilder());
+
+		return this;
+	}
+
+	public addSubcommandGroup(group: SlashCommandSubcommandGroup) {
+		this._subcommand_groups.push(group);
+		this._.addSubcommandGroup(group.onlyBuilder());
+
+		return this;
+	}
+
 	public get permissions() {
 		return this._permissions;
 	}

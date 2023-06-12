@@ -122,6 +122,13 @@ export class SlashCommandSubcommand {
 		return this._.description;
 	}
 
+	/**
+	 * # Internal usage
+	 */
+	public onlyBuilder() {
+		return this._;
+	}
+
 	public toJSON() {
 		return this._.toJSON();
 	}
