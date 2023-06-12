@@ -383,7 +383,7 @@ export class MusicQueue {
 
 		this.afkDestroyTimeout = setTimeout(
 			this.timeoutCallback.bind(this),
-			10000
+			60000
 		);
 	}
 
