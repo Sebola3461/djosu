@@ -26,6 +26,7 @@ import { colors } from "../constants/colors";
 import { infoEmbed } from "../utils/embeds/infoEmbed";
 import truncateString from "../utils/transformers/truncateString";
 import { parseOsuBeatmapURL } from "../utils/transformers/parseOsuBeatmapURL";
+import { ffprobe } from "../utils/transformers/ffprobe";
 
 export default new SlashCommand()
 	.setName("play")
@@ -188,7 +189,14 @@ export default new SlashCommand()
 				)
 					return;
 
-				const song = new Song(beatmapset, command.user, audioFile);
+				const probe = await ffprobe(audioFile.path);
+
+				const song = new Song(
+					beatmapset,
+					command.user,
+					audioFile.buffer,
+					probe.format.duration || 0
+				);
 
 				if (!djosu.queues.getQueue(command.guildId)) {
 					djosu.queues.createQueue(voiceChannel);

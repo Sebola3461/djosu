@@ -90,7 +90,8 @@ export class DjOsu extends Client {
 			| "previousSong"
 			| "pauseSong"
 			| "loopSong"
-			| "nextSong";
+			| "nextSong"
+			| "update";
 
 		const queue = this.queues.getQueue(button.guildId);
 
@@ -139,6 +140,9 @@ export class DjOsu extends Client {
 					return;
 
 				queue.setLoop(!queue.loop);
+				queue.sendUpdateMessage();
+				break;
+			case "update":
 				queue.sendUpdateMessage();
 				break;
 		}

@@ -1,10 +1,12 @@
 import {
 	AudioPlayer,
+	AudioPlayerPlayingState,
 	AudioPlayerStatus,
 	createAudioPlayer,
 	joinVoiceChannel,
 	NoSubscriberBehavior,
 	VoiceConnection,
+	VoiceConnectionSignallingState,
 } from "@discordjs/voice";
 import {
 	ActionRowBuilder,
@@ -25,6 +27,10 @@ import { colors } from "../../constants/colors";
 import timeString from "../../utils/transformers/timeString";
 import { DjOsu } from "./DjOsu";
 import { Song } from "./Song";
+import { createConnection } from "net";
+import { generateTextProgressBar } from "../../utils/transformers/generateTextProgressBar";
+import { percentageOf } from "../../utils/transformers/percentageOf";
+import { percentageOfTotal } from "../../utils/transformers/percentageOfTotal";
 
 export enum SongRemoveStatus {
 	Destroyed,
@@ -35,10 +41,10 @@ export enum SongRemoveStatus {
 
 export class MusicQueue {
 	public bot!: DjOsu;
-	public readonly voiceChannel: VoiceBasedChannel;
+	public voiceChannel: VoiceBasedChannel;
 	public readonly guildId: string;
-	public readonly channelId: string;
-	public readonly connection: VoiceConnection;
+	public channelId: string;
+	public connection: VoiceConnection;
 	public readonly player: AudioPlayer;
 	public textChannel!: TextBasedChannel;
 
@@ -58,7 +64,7 @@ export class MusicQueue {
 
 	constructor(options: { bot: DjOsu; channel: VoiceBasedChannel }) {
 		this.player = createAudioPlayer({
-			behaviors: { noSubscriber: NoSubscriberBehavior.Play },
+			behaviors: { noSubscriber: NoSubscriberBehavior.Pause },
 		});
 
 		this.guildId = options.channel.guildId;
@@ -92,6 +98,8 @@ export class MusicQueue {
 				} else {
 					this.skipSong();
 				}
+
+				return;
 			}
 
 			if (
@@ -103,12 +111,28 @@ export class MusicQueue {
 				} else {
 					this.skipSong();
 				}
+
+				return;
 			}
 		});
 	}
 
 	private setLock(locked: boolean) {
 		this.isLocked = locked;
+
+		return this;
+	}
+
+	public setVoiceChannel(channel: VoiceBasedChannel) {
+		this.voiceChannel = channel;
+		this.channelId = channel.id;
+		this.connection.destroy();
+		this.connection = joinVoiceChannel({
+			channelId: this.channelId,
+			guildId: this.guildId,
+			adapterCreator: channel.guild.voiceAdapterCreator,
+		});
+		this.connection.subscribe(this.player);
 
 		return this;
 	}
@@ -188,6 +212,10 @@ export class MusicQueue {
 			.setStyle(
 				this.isLoop() ? ButtonStyle.Success : ButtonStyle.Secondary
 			);
+		const timeUpdate = new ButtonBuilder()
+			.setLabel("🕒")
+			.setCustomId(`global,update`)
+			.setStyle(ButtonStyle.Secondary);
 		const nextSong = new ButtonBuilder()
 			.setLabel("▶️")
 			.setCustomId(`global,nextSong`)
@@ -197,7 +225,8 @@ export class MusicQueue {
 			previousSong,
 			pauseSong,
 			loopToggle,
-			nextSong
+			nextSong,
+			timeUpdate
 		);
 	}
 
@@ -282,14 +311,6 @@ export class MusicQueue {
 		return this;
 	}
 
-	private getSongDuration() {
-		const songBeatmaps = this.getCurrentSong().beatmapInfo.beatmaps;
-
-		if (!songBeatmaps) return timeString(0);
-
-		return timeString(songBeatmaps[0].total_length);
-	}
-
 	private generateClearQueueMessage() {
 		const embed = new EmbedBuilder()
 			.setAuthor({
@@ -334,9 +355,12 @@ export class MusicQueue {
 				`https://b.ppy.sh/thumb/${currentSong.beatmapInfo.id}l.jpg`
 			)
 			.setDescription(
-				`🕒 Duration: ${this.getSongDuration()} | 👤 Requested by: <@${
-					currentSong.user.id
-				}>`
+				`👤 Requested by: <@${currentSong.user.id}>\n${timeString(
+					(this.player.state as AudioPlayerPlayingState).resource
+						.playbackDuration / 1000
+				)}/${timeString(
+					this.getCurrentSong().duration
+				)} ${this.generateStaticSeekBar()}`
 			)
 			.setColor(colors.pink as ColorResolvable);
 
@@ -344,6 +368,22 @@ export class MusicQueue {
 			embeds: [embed],
 			components: [this.getPlayingEmbedButtons()],
 		};
+	}
+
+	private generateStaticSeekBar() {
+		const playerState = this.player.state as AudioPlayerPlayingState;
+		const currentPosition = playerState.playbackDuration / 1000;
+		const currentPositionPercentage = percentageOfTotal(
+			currentPosition,
+			this.getCurrentSong().duration
+		);
+		const maxBars = 15;
+
+		const barsCount = Math.round(
+			percentageOf(Math.round(currentPositionPercentage), maxBars)
+		);
+
+		return `${generateTextProgressBar(barsCount, maxBars)}`;
 	}
 
 	private deleteBeatmap() {

@@ -100,13 +100,20 @@ export class BeatmapsetImporter extends EventEmitter {
 
 			if (!mapData) return null;
 
-			return readFileSync(
-				path.join(
+			return {
+				buffer: readFileSync(
+					path.join(
+						this.getImportFolder(),
+						this.getBeatmapsetId(),
+						mapData.general.audioFilename
+					)
+				),
+				path: path.join(
 					this.getImportFolder(),
 					this.getBeatmapsetId(),
 					mapData.general.audioFilename
-				)
-			);
+				),
+			};
 		} catch (e) {
 			console.error(e);
 
