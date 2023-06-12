@@ -2,19 +2,16 @@ import {
 	ActivityType,
 	ButtonInteraction,
 	Client,
-	ColorResolvable,
-	EmbedBuilder,
 	GuildMember,
 	Interaction,
 } from "discord.js";
-import { LoggerService } from "../general/LoggerService";
-import { CommandsManager } from "../commands/CommandsManager";
-import { generateOsuApiToken } from "../../utils/fetcher/startConnection";
-import { auth } from "osu-api-extended";
 import { existsSync, mkdirSync } from "fs";
+import { auth } from "osu-api-extended";
 import path from "path";
+import { generateOsuApiToken } from "../../utils/fetcher/startConnection";
+import { CommandsManager } from "../commands/CommandsManager";
+import { LoggerService } from "../general/LoggerService";
 import { MusicQueueManager } from "./MusicQueueManager";
-import { colors } from "../../constants/colors";
 
 export class DjOsu extends Client {
 	private logger = new LoggerService("DjOsu");

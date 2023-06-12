@@ -4,11 +4,7 @@ import {
 	mkdirSync,
 	readdirSync,
 	readFileSync,
-	rm,
-	rmdirSync,
 	rmSync,
-	unlinkSync,
-	writeFileSync,
 } from "fs";
 import { Beatmap } from "osu-classes";
 import { BeatmapDecoder } from "osu-parsers";

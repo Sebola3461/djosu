@@ -20,7 +20,6 @@ import {
 } from "discord.js";
 import { rmSync } from "fs";
 import path from "path";
-
 import { djosu } from "../..";
 import { colors } from "../../constants/colors";
 import timeString from "../../utils/transformers/timeString";

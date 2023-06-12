@@ -1,8 +1,4 @@
-import {
-	GuildTextBasedChannel,
-	TextBasedChannel,
-	VoiceBasedChannel,
-} from "discord.js";
+import { GuildTextBasedChannel, VoiceBasedChannel } from "discord.js";
 import { DjOsu } from "./DjOsu";
 import { MusicQueue } from "./MusicQueue";
 import { Song } from "./Song";
