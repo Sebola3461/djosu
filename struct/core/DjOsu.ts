@@ -116,6 +116,8 @@ export class DjOsu extends Client {
 				)
 					return;
 
+				if (!queue.hasNext()) return;
+
 				queue.skipSong();
 				break;
 			case "pauseSong":
@@ -128,7 +130,7 @@ export class DjOsu extends Client {
 
 				queue.pause();
 				button.editReply({
-					components: [queue.getPlayingEmbedButtons()],
+					components: queue.getPlayingEmbedButtons(),
 				});
 				break;
 			case "loopSong":

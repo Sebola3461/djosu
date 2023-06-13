@@ -175,8 +175,6 @@ export async function searchBeatmapset({
 			},
 		});
 
-		console.log(req.config.url);
-
 		const res = req.data;
 
 		logger.printSuccess(`Searching beatmapsets "${query}" results found!`);

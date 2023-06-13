@@ -58,10 +58,19 @@ export default new SlashCommand()
 
 			const guildQueue = djosu.queues.getQueue(command.guildId);
 
-			if (guildQueue && guildQueue.channelId != voiceChannel.id)
-				return errorEmbed(command.editReply.bind(command), {
-					description: `I'm playing song in another channel! Please, join <#${guildQueue.channelId}> and try again.`,
-				});
+			if (guildQueue && guildQueue.channelId != voiceChannel.id) {
+				if (
+					guildQueue.voiceChannel.members.size != 1 &&
+					!guildQueue.checkAdminPermissionsFor(
+						command.member as GuildMember
+					)
+				)
+					return errorEmbed(command.editReply.bind(command), {
+						description: `I'm playing song in another channel! Please, join <#${guildQueue.channelId}> or use \`/join\` and try again.`,
+					});
+
+				guildQueue.setVoiceChannel(voiceChannel);
+			}
 
 			function getSearchOrBeatmapIds() {
 				const beatmap = parseOsuBeatmapURL(query);

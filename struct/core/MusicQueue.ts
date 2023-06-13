@@ -97,24 +97,21 @@ export class MusicQueue {
 					this.play();
 				} else {
 					this.skipSong();
-				}
 
-				return;
-			}
-
-			if (
-				state.status == AudioPlayerStatus.Idle &&
-				oldState.status == AudioPlayerStatus.Playing
-			) {
-				if (this.isLoop()) {
-					this.play();
-				} else {
-					this.skipSong();
+					if (this.getSongs().length == this.getCurrentSongIndex()) {
+						this.sendClearQueueMessage();
+						this.finalizeQueue();
+						return;
+					}
 				}
 
 				return;
 			}
 		});
+	}
+
+	public getCurrentSongIndex() {
+		return this.currentSongIndex;
 	}
 
 	private setLock(locked: boolean) {
@@ -144,17 +141,20 @@ export class MusicQueue {
 	public checkManagePermissionsFor(member: GuildMember) {
 		const currentSong = this.getCurrentSong();
 
-		if (!currentSong) return;
+		if (!currentSong) return true;
 
-		if (!this.voiceChannel.members.has(this.getCurrentSong().user.id))
-			return true;
-
-		if (this.voiceChannel.members.size == 2) return true;
-
-		if (this.getCurrentSong().user.id == member.id) return true;
+		if (!this.voiceChannel.members.has(currentSong.user.id)) return true;
 
 		if (
-			this.getCurrentSong().user.id != member.id &&
+			this.voiceChannel.members.size == 2 &&
+			this.voiceChannel.members.has(member.id)
+		)
+			return true;
+
+		if (currentSong.user.id == member.id) return true;
+
+		if (
+			currentSong.user.id != member.id &&
 			!member.permissions.has("DeafenMembers", true) &&
 			!member.permissions.has("MuteMembers", true) &&
 			!member.permissions.has("ManageChannels", true)
@@ -167,9 +167,13 @@ export class MusicQueue {
 	public checkAdminPermissionsFor(member: GuildMember) {
 		const currentSong = this.getCurrentSong();
 
-		if (!currentSong) return;
+		if (!currentSong) return true;
 
-		if (this.voiceChannel.members.size == 2) return true;
+		if (
+			this.voiceChannel.members.size == 2 &&
+			this.voiceChannel.members.has(member.id)
+		)
+			return true;
 
 		if (
 			!member.permissions.has("DeafenMembers", true) &&
@@ -195,11 +199,12 @@ export class MusicQueue {
 
 	public getPlayingEmbedButtons() {
 		const previousSong = new ButtonBuilder()
-			.setLabel("◀️")
+			.setLabel("⏮️ Previous")
 			.setCustomId(`global,previousSong`)
 			.setStyle(ButtonStyle.Secondary);
 		const pauseSong = new ButtonBuilder()
-			.setLabel("⏯️")
+			.setLabel("⏯️ Pause")
+
 			.setCustomId(`global,pauseSong`)
 			.setStyle(
 				this.player.state.status == AudioPlayerStatus.Paused
@@ -207,27 +212,29 @@ export class MusicQueue {
 					: ButtonStyle.Secondary
 			);
 		const loopToggle = new ButtonBuilder()
-			.setLabel("🔁")
+			.setLabel("🔁 Loop")
 			.setCustomId(`global,loopSong`)
 			.setStyle(
 				this.isLoop() ? ButtonStyle.Success : ButtonStyle.Secondary
 			);
 		const timeUpdate = new ButtonBuilder()
-			.setLabel("🕒")
+			.setLabel("🕒 Position")
 			.setCustomId(`global,update`)
 			.setStyle(ButtonStyle.Secondary);
 		const nextSong = new ButtonBuilder()
-			.setLabel("▶️")
+			.setLabel("⏭️ Next Song")
 			.setCustomId(`global,nextSong`)
 			.setStyle(ButtonStyle.Secondary);
 
-		return new ActionRowBuilder<ButtonBuilder>().setComponents(
-			previousSong,
-			pauseSong,
-			loopToggle,
-			nextSong,
-			timeUpdate
-		);
+		return [
+			new ActionRowBuilder<ButtonBuilder>().setComponents(
+				previousSong,
+				pauseSong,
+				loopToggle,
+				nextSong,
+				timeUpdate
+			),
+		];
 	}
 
 	hasNext() {
@@ -261,17 +268,23 @@ export class MusicQueue {
 
 	selectSong(index: number) {
 		this.setSongIndex(index);
-		this.player.play(this.getSongs()[this.getSongIndex()].getAudio());
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return;
+
+		this.player.play(currentSong.getAudio());
 	}
 
-	getCurrentSong() {
-		return this.getSongs()[this.getSongIndex()];
+	getCurrentSong(): Song | undefined {
+		return this.getSongs()[this.getCurrentSongIndex()];
 	}
 
 	findCurrentSongIndex() {
-		return this.getSongs().findIndex(
-			(c) => c.id == this.getCurrentSong().id
-		);
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return -1;
+
+		return this.getSongs().findIndex((c) => c.id == currentSong.id);
 	}
 
 	findSongIndexById(songId: string) {
@@ -292,7 +305,7 @@ export class MusicQueue {
 			.catch(() => void {});
 	}
 
-	private sendFinalizationMessage() {
+	public sendClearQueueMessage() {
 		if (this.isQueueLocked()) return;
 
 		if (this.lastStatusMessage)
@@ -305,6 +318,17 @@ export class MusicQueue {
 			.catch(() => void {});
 	}
 
+	private sendFinalizationMessage() {
+		if (this.isQueueLocked()) return;
+
+		if (this.lastStatusMessage)
+			this.lastStatusMessage.delete().catch(() => {
+				void {};
+			});
+
+		this.textChannel.send(this.generateAfkEmbed()).catch(() => void {});
+	}
+
 	private setLastMessage(message: Message) {
 		this.lastStatusMessage = message;
 
@@ -314,7 +338,19 @@ export class MusicQueue {
 	private generateClearQueueMessage() {
 		const embed = new EmbedBuilder()
 			.setAuthor({
-				name: "🎵 Queue is now empty! I will delete it to save resources.",
+				name: "🎵 Queue is now empty!",
+			})
+			.setColor(colors.blue as ColorResolvable);
+
+		return {
+			embeds: [embed],
+		};
+	}
+
+	private generateAfkEmbed() {
+		const embed = new EmbedBuilder()
+			.setAuthor({
+				name: "🎵 The queue was afk and ended.",
 			})
 			.setColor(colors.blue as ColorResolvable);
 
@@ -346,27 +382,27 @@ export class MusicQueue {
 				name: "🎵 Now playing",
 			})
 			.setTitle(
-				`${currentSong.beatmapInfo.artist} - ${currentSong.beatmapInfo.title}`
+				`${currentSong?.beatmapInfo.artist} - ${currentSong?.beatmapInfo.title}`
 			)
 			.setURL(
-				`https://osu.ppy.sh/beatmapsets/${currentSong.beatmapInfo.id}`
+				`https://osu.ppy.sh/beatmapsets/${currentSong?.beatmapInfo.id}`
 			)
 			.setThumbnail(
-				`https://b.ppy.sh/thumb/${currentSong.beatmapInfo.id}l.jpg`
+				`https://b.ppy.sh/thumb/${currentSong?.beatmapInfo.id}l.jpg`
 			)
 			.setDescription(
-				`👤 Requested by: <@${currentSong.user.id}>\n${timeString(
+				`👤 Requested by: <@${currentSong?.user.id}>\n${timeString(
 					(this.player.state as AudioPlayerPlayingState).resource
 						.playbackDuration / 1000
 				)}/${timeString(
-					this.getCurrentSong().duration
+					currentSong?.duration || 0
 				)} ${this.generateStaticSeekBar()}`
 			)
 			.setColor(colors.pink as ColorResolvable);
 
 		return {
 			embeds: [embed],
-			components: [this.getPlayingEmbedButtons()],
+			components: this.getPlayingEmbedButtons(),
 		};
 	}
 
@@ -375,7 +411,7 @@ export class MusicQueue {
 		const currentPosition = playerState.playbackDuration / 1000;
 		const currentPositionPercentage = percentageOfTotal(
 			currentPosition,
-			this.getCurrentSong().duration
+			this.getCurrentSong()?.duration || 0
 		);
 		const maxBars = 15;
 
@@ -390,23 +426,21 @@ export class MusicQueue {
 		const stagingPath = path.resolve("./cache/staging");
 		const cachePath = path.resolve("./cache/beatmapsets");
 
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return;
+
 		try {
 			rmSync(
-				path.join(
-					stagingPath,
-					`${this.getCurrentSong().beatmapInfo.id}.zip`
-				),
+				path.join(stagingPath, `${currentSong.beatmapInfo.id}.zip`),
 				{
 					recursive: true,
 				}
 			);
 
-			rmSync(
-				path.join(cachePath, `${this.getCurrentSong().beatmapInfo.id}`),
-				{
-					recursive: true,
-				}
-			);
+			rmSync(path.join(cachePath, `${currentSong.beatmapInfo.id}`), {
+				recursive: true,
+			});
 		} catch (e) {
 			void {};
 		}
@@ -456,6 +490,9 @@ export class MusicQueue {
 
 	private recalculateIndexes() {
 		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return this.setSongIndex(0);
+
 		const currentSongIndex = this.songs.findIndex(
 			(s) => s.id == currentSong.id
 		);
@@ -503,12 +540,21 @@ export class MusicQueue {
 	skipSong() {
 		this.deleteBeatmap();
 
-		if (this.getSongIndex() + 1 == this.getSongs().length)
-			return this.finalizeQueue(true);
+		if (this.getSongIndex() + 1 >= this.getSongs().length) {
+			this.setSongIndex(this.getSongIndex() + 1);
+
+			this.player.stop();
+
+			return;
+		}
 
 		this.setSongIndex(this.getSongIndex() + 1);
 
-		this.player.play(this.getSongs()[this.getSongIndex()].getAudio());
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return;
+
+		this.player.play(currentSong.getAudio());
 
 		this.sendUpdateMessage();
 	}
@@ -516,11 +562,15 @@ export class MusicQueue {
 	previousSong() {
 		this.deleteBeatmap();
 
-		if (this.getSongIndex() - 1 < 0) return this.finalizeQueue(true);
+		if (this.getSongIndex() - 1 < 0) return;
 
 		this.setSongIndex(this.getSongIndex() - 1);
 
-		this.player.play(this.getSongs()[this.getSongIndex()].getAudio());
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return;
+
+		this.player.play(currentSong.getAudio());
 
 		this.sendUpdateMessage();
 	}

@@ -11,7 +11,8 @@ export function generateTextProgressBar(current: number, total: number) {
 
 	result = result
 		.concat(fillCharacter.repeat(current))
-		.concat(unfilledCharacter.repeat(total - current));
+		.concat(unfilledCharacter.repeat(total - current))
+		.trimEnd();
 
-	return `[${result}]`;
+	return `\`[ ${result} ]\``;
 }
