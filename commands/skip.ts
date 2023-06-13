@@ -39,5 +39,5 @@ export default new SlashCommand()
 
 		command.deleteReply();
 
-		queue.skipSong(false);
+		queue.skipSong();
 	});
