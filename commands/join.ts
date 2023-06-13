@@ -1,31 +1,10 @@
-import {
-	ActionRowBuilder,
-	ColorResolvable,
-	EmbedBuilder,
-	GuildMember,
-	GuildTextBasedChannel,
-	InteractionCollector,
-	SlashCommandStringOption,
-	StringSelectMenuBuilder,
-	StringSelectMenuInteraction,
-} from "discord.js";
-import { SlashCommand } from "../struct/commands/SlashCommand";
-import { BeatmapsetImporter } from "../struct/osu/BeatmapsetImporter";
-import { v2 } from "osu-api-extended";
-import { resolve } from "path";
-import { readFileSync } from "fs";
-import { Song } from "../struct/core/Song";
+import { ColorResolvable, EmbedBuilder, GuildMember } from "discord.js";
+
 import { djosu } from "..";
-import osuApi from "../utils/fetcher/osuApi";
-import { BeatmapStatus, Beatmapset } from "../types/beatmap";
-import { errorEmbed } from "../utils/embeds/errorEmbed";
-import { randomUUID } from "crypto";
-import { AudioPlayerStatus } from "@discordjs/voice";
-import { addedToQueueEmbed } from "../utils/embeds/addedToQueueEmbed";
 import { colors } from "../constants/colors";
-import { infoEmbed } from "../utils/embeds/infoEmbed";
-import truncateString from "../utils/transformers/truncateString";
-import { parseOsuBeatmapURL } from "../utils/transformers/parseOsuBeatmapURL";
+import { SlashCommand } from "../struct/commands/SlashCommand";
+import { clientHasValidVoicePermissions } from "../utils/checkers/clientHasValidVoicePermissions";
+import { errorEmbed } from "../utils/embeds/errorEmbed";
 
 export default new SlashCommand()
 	.setName("join")
@@ -39,6 +18,11 @@ export default new SlashCommand()
 			if (!voiceChannel)
 				return errorEmbed(command.editReply.bind(command), {
 					description: "You need to join a voice channel!",
+				});
+
+			if (!clientHasValidVoicePermissions(voiceChannel))
+				return errorEmbed(command.editReply.bind(command), {
+					description: `I don't have permissions to join or speak on <#${voiceChannel.id}>! If you're an admin, please fix my permissions.`,
 				});
 
 			const guildQueue = djosu.queues.getQueue(command.guildId);

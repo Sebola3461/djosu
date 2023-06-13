@@ -27,6 +27,7 @@ import { infoEmbed } from "../utils/embeds/infoEmbed";
 import truncateString from "../utils/transformers/truncateString";
 import { parseOsuBeatmapURL } from "../utils/transformers/parseOsuBeatmapURL";
 import { ffprobe } from "../utils/transformers/ffprobe";
+import { clientHasValidVoicePermissions } from "../utils/checkers/clientHasValidVoicePermissions";
 
 export default new SlashCommand()
 	.setName("play")
@@ -48,6 +49,11 @@ export default new SlashCommand()
 			if (!voiceChannel)
 				return errorEmbed(command.editReply.bind(command), {
 					description: "You need to join a voice channel!",
+				});
+
+			if (!clientHasValidVoicePermissions(voiceChannel))
+				return errorEmbed(command.editReply.bind(command), {
+					description: `I don't have permissions to join or speak on <#${voiceChannel.id}>! If you're an admin, please fix my permissions.`,
 				});
 
 			const guildQueue = djosu.queues.getQueue(command.guildId);
@@ -147,79 +153,89 @@ export default new SlashCommand()
 			);
 
 			async function handleBeatmap(beatmapset: Beatmapset) {
-				if (guildQueue) guildQueue.clearDestroyTimeout();
+				try {
+					if (guildQueue) guildQueue.clearDestroyTimeout();
 
-				if (beatmapset.beatmaps?.find((b) => b.total_length > 480))
-					return errorEmbed(command.editReply.bind(command), {
-						description:
-							"Beatmap too long! I can't play anything longer than 8 minutes.",
+					if (beatmapset.beatmaps?.find((b) => b.total_length > 480))
+						return errorEmbed(command.editReply.bind(command), {
+							description:
+								"Beatmap too long! I can't play anything longer than 8 minutes.",
+						});
+
+					infoEmbed(command.editReply.bind(command), {
+						description: `Downloading beatmap...`,
 					});
 
-				infoEmbed(command.editReply.bind(command), {
-					description: `Downloading beatmap...`,
-				});
+					const oszFile = await v2.beatmap.set.download(
+						Number(beatmapset.id),
+						resolve(`./cache/staging/${beatmapset.id}.zip`),
+						"osu",
+						true
+					);
 
-				const oszFile = await v2.beatmap.set.download(
-					Number(beatmapset.id),
-					resolve(`./cache/staging/${beatmapset.id}.zip`),
-					"osu",
-					true
-				);
+					if (!oszFile) return;
 
-				if (!oszFile) return;
+					const importer = new BeatmapsetImporter(
+						readFileSync(
+							resolve(`./cache/staging/${beatmapset.id}.zip`)
+						),
+						beatmapset.id.toString()
+					);
+					await importer.importOSZ();
+					importer.loadDifficulties();
 
-				const importer = new BeatmapsetImporter(
-					readFileSync(
-						resolve(`./cache/staging/${beatmapset.id}.zip`)
-					),
-					beatmapset.id.toString()
-				);
-				await importer.importOSZ();
-				importer.loadDifficulties();
+					const audioFile = importer.getAudioFileFromIndex(0);
 
-				const audioFile = importer.getAudioFileFromIndex(0);
+					if (!audioFile) return;
 
-				if (!audioFile) return;
+					if (
+						!command.member ||
+						!command.guildId ||
+						!command.channel ||
+						!voiceChannel
+					)
+						return;
 
-				if (
-					!command.member ||
-					!command.guildId ||
-					!command.channel ||
-					!voiceChannel
-				)
-					return;
+					const probe = await ffprobe(audioFile.path);
 
-				const probe = await ffprobe(audioFile.path);
+					const song = new Song(
+						beatmapset,
+						command.user,
+						audioFile.buffer,
+						probe.format.duration || 0
+					);
 
-				const song = new Song(
-					beatmapset,
-					command.user,
-					audioFile.buffer,
-					probe.format.duration || 0
-				);
+					if (!djosu.queues.getQueue(command.guildId)) {
+						djosu.queues.createQueue(voiceChannel);
+					}
 
-				if (!djosu.queues.getQueue(command.guildId)) {
-					djosu.queues.createQueue(voiceChannel);
-				}
+					djosu.queues.setQueueTextChannel(
+						command.channel as GuildTextBasedChannel
+					);
 
-				djosu.queues.setQueueTextChannel(
-					command.channel as GuildTextBasedChannel
-				);
+					const queue = djosu.queues.addSongToQueue(
+						song,
+						voiceChannel
+					);
 
-				const queue = djosu.queues.addSongToQueue(song, voiceChannel);
-
-				if (
-					queue &&
-					queue.player.state.status == AudioPlayerStatus.Playing
-				) {
-					command.editReply(addedToQueueEmbed(song));
-				} else {
-					command.deleteReply();
+					if (
+						queue &&
+						queue.player.state.status == AudioPlayerStatus.Playing
+					) {
+						command.editReply(addedToQueueEmbed(song));
+					} else {
+						command.deleteReply();
+					}
+				} catch (e: any) {
+					console.error(e);
+					errorEmbed(command.editReply.bind(command), {
+						description: e.message || "Unknown Error...",
+					});
 				}
 			}
 		} catch (e: any) {
 			console.error(e);
-			errorEmbed(command.editReply.bind(this), {
+			errorEmbed(command.editReply.bind(command), {
 				description: e.message || "Unknown Error...",
 			});
 		}
