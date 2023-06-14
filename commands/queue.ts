@@ -34,9 +34,9 @@ export default new SlashCommand()
 		}
 
 		const currentSong = queue.getCurrentSong();
-		const currentSongIndex = queue
-			.getSongs()
-			.indexOf(queue.getCurrentSong());
+		const currentSongIndex = currentSong
+			? queue.getSongs().indexOf(currentSong)
+			: -1;
 		const chunksList = generateChunks<DescriptionChunk>(
 			queue.getSongs().map((song, i) => {
 				return {
@@ -53,9 +53,8 @@ export default new SlashCommand()
 		const interactionHandshake = randomUUID();
 
 		let currentPage = chunksList.findIndex((chunk: DescriptionChunk[]) =>
-			chunk.find(
-				(component: DescriptionChunk) =>
-					component.song.id == currentSong.id
+			chunk.find((component: DescriptionChunk) =>
+				currentSong ? component.song.id == currentSong.id : 0
 			)
 		);
 
