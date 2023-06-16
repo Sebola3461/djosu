@@ -171,5 +171,8 @@ export class DjOsu extends Client {
 
 		if (!existsSync(path.resolve("./cache/beatmapsets")))
 			mkdirSync(path.resolve("./cache/beatmapsets"));
+
+		if (!existsSync(path.resolve("./cache/rateChange")))
+			mkdirSync(path.resolve("./cache/rateChange"));
 	}
 }

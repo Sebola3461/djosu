@@ -207,10 +207,13 @@ export default new SlashCommand()
 
 					const probe = await ffprobe(audioFile.path);
 
+					if (!probe.format.format_name) return;
+
 					const song = new Song(
 						beatmapset,
 						command.user,
 						audioFile.buffer,
+						probe.format.format_name,
 						probe.format.duration || 0
 					);
 

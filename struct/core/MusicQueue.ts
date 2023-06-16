@@ -231,9 +231,9 @@ export class MusicQueue {
 				previousSong,
 				pauseSong,
 				loopToggle,
-				nextSong,
-				timeUpdate
+				nextSong
 			),
+			new ActionRowBuilder<ButtonBuilder>().setComponents(timeUpdate),
 		];
 	}
 
@@ -264,6 +264,31 @@ export class MusicQueue {
 		this.textChannel = textChannel;
 
 		return this;
+	}
+
+	changeAudioRate(rate: number, modifyPitch: boolean) {
+		const currentSong = this.getCurrentSong();
+
+		if (!currentSong) return false;
+
+		this.player.pause();
+
+		currentSong
+			.setRate(rate, modifyPitch)
+			.then(() => {
+				this.player.stop();
+				this.selectSong(this.getCurrentSongIndex());
+
+				this.sendUpdateMessage();
+
+				return true;
+			})
+			.catch(() => {
+				this.player.unpause();
+				return false;
+			});
+
+		return true;
 	}
 
 	selectSong(index: number) {
@@ -391,7 +416,9 @@ export class MusicQueue {
 				`https://b.ppy.sh/thumb/${currentSong?.beatmapInfo.id}l.jpg`
 			)
 			.setDescription(
-				`👤 Requested by: <@${currentSong?.user.id}>\n${timeString(
+				`👤 Requested by: <@${currentSong?.user.id}> | 🕒 Rate: ${
+					currentSong?.playbackRate
+				}x\n${timeString(
 					(this.player.state as AudioPlayerPlayingState).resource
 						.playbackDuration / 1000
 				)}/${timeString(
