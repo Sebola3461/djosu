@@ -5,7 +5,6 @@ import { User } from "discord.js";
 import { Beatmapset } from "../../types/beatmap";
 import { bufferToStream } from "../../utils/transformers/bufferToStream";
 import { changeAudioRate } from "../../utils/transformers/changeAudioRate";
-import { streamToBuffer } from "../../utils/transformers/streamToBuffer";
 
 export class Song {
 	public beatmapInfo: Beatmapset;

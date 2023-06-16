@@ -231,9 +231,9 @@ export class MusicQueue {
 				previousSong,
 				pauseSong,
 				loopToggle,
-				nextSong
+				nextSong,
+				timeUpdate
 			),
-			new ActionRowBuilder<ButtonBuilder>().setComponents(timeUpdate),
 		];
 	}
 

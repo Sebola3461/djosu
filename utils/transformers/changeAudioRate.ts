@@ -17,18 +17,10 @@ export function changeAudioRate(
 				"./cache/rateChange/".concat(`${hash}.${format}`)
 			);
 
-			const filters = modifyPitch
-				? {
-						filter: "rubberband",
-						options: {
-							t: rate,
-							p: rate,
-						},
-				  }
-				: {
-						filter: "atempo",
-						options: rate,
-				  };
+			const filters = {
+				filter: "atempo",
+				options: rate,
+			};
 
 			ffmpeg({
 				source: internal.Readable.from(audio, {

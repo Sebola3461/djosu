@@ -15,19 +15,11 @@ export default new SlashCommand()
 			.setChoices(
 				{
 					name: "DT",
-					value: "1.5n",
+					value: "1.5",
 				},
-				// {
-				// 	name: "NM",
-				// 	value: "1.0n",
-				// },
-				// {
-				// 	name: "NC",
-				// 	value: "1.5p",
-				// },
 				{
 					name: "HT",
-					value: "0.75n",
+					value: "0.75",
 				}
 			)
 			.setRequired(true)
@@ -37,12 +29,18 @@ export default new SlashCommand()
 			if (!command.guildId || !command.member) return;
 
 			const input = command.options.getString("rate", true);
-			const newRate = Number(input.slice(0, -1));
-			const pitch = input.slice(-1) == "p" ? true : false;
+			let newRate = Number(input);
 
 			const queue = djosu.queues.getQueue(command.guildId);
 
 			if (!queue)
+				return errorEmbed(command.editReply.bind(command), {
+					description: "There's nothing playing here!",
+				});
+
+			const currentSong = queue.getCurrentSong();
+
+			if (!currentSong)
 				return errorEmbed(command.editReply.bind(command), {
 					description: "There's nothing playing here!",
 				});
@@ -68,7 +66,12 @@ export default new SlashCommand()
 					description: "You don't have permissions to do it.",
 				});
 
-			const rate = queue.changeAudioRate(newRate, pitch);
+			if (newRate == 1.0 && currentSong.playbackRate != 1.0) {
+				if (currentSong.playbackRate == 1.5) newRate = 0.5;
+				if (currentSong.playbackRate == 0.75) newRate = 1.35;
+			}
+
+			const rate = queue.changeAudioRate(newRate, false);
 
 			if (!rate)
 				return errorEmbed(command.editReply.bind(command), {
@@ -77,9 +80,9 @@ export default new SlashCommand()
 
 			infoEmbed(command.editReply.bind(command), {
 				description:
-					newRate == 1.5
+					input == "1.5"
 						? "Enabled DT"
-						: newRate == 0.75
+						: input == "0.75"
 						? "Enabled HT"
 						: "Disabled all mods",
 			});
