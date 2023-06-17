@@ -420,7 +420,8 @@ export class MusicQueue {
 					currentSong?.playbackRate
 				}x\n${timeString(
 					this.player.state.status == AudioPlayerStatus.Playing
-						? this.player.state.playbackDuration / 1000
+						? (this.player.state.resource?.playbackDuration ||
+								1000) / 1000
 						: 0
 				)}/${timeString(
 					currentSong?.duration || 0
