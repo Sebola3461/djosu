@@ -343,7 +343,7 @@ export class MusicQueue {
 			.catch(() => void {});
 	}
 
-	private sendFinalizationMessage() {
+	private sendFinalizationMessage(reason?: string) {
 		if (this.isQueueLocked()) return;
 
 		if (this.lastStatusMessage)
@@ -351,7 +351,9 @@ export class MusicQueue {
 				void {};
 			});
 
-		this.textChannel.send(this.generateAfkEmbed()).catch(() => void {});
+		this.textChannel
+			.send(this.generateAfkEmbed(reason))
+			.catch(() => void {});
 	}
 
 	private setLastMessage(message: Message) {
@@ -372,10 +374,10 @@ export class MusicQueue {
 		};
 	}
 
-	private generateAfkEmbed() {
+	private generateAfkEmbed(reason?: string) {
 		const embed = new EmbedBuilder()
 			.setAuthor({
-				name: "🎵 The queue was afk and ended.",
+				name: reason ? reason : "🎵 The queue was afk and ended.",
 			})
 			.setColor(colors.blue as ColorResolvable);
 
@@ -481,11 +483,11 @@ export class MusicQueue {
 		return this;
 	}
 
-	finalizeQueue(instantly?: boolean) {
-		if (instantly) return this.timeoutCallback();
+	finalizeQueue(instantly?: boolean, reason?: string) {
+		if (instantly) return this.timeoutCallback(reason);
 
 		this.afkDestroyTimeout = setTimeout(
-			this.timeoutCallback.bind(this),
+			() => this.timeoutCallback.bind(this)(reason),
 			60000
 		);
 	}
@@ -498,11 +500,11 @@ export class MusicQueue {
 		return (this.songs = songs);
 	}
 
-	private timeoutCallback() {
+	private timeoutCallback(reason?: string) {
 		try {
 			this.deleteBeatmap();
 
-			this.sendFinalizationMessage();
+			this.sendFinalizationMessage(reason);
 
 			this.player.stop();
 			this.connection.destroy();
