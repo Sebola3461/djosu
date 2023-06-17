@@ -419,8 +419,9 @@ export class MusicQueue {
 				`👤 Requested by: <@${currentSong?.user.id}> | 🕒 Rate: ${
 					currentSong?.playbackRate
 				}x\n${timeString(
-					(this.player.state as AudioPlayerPlayingState).resource
-						.playbackDuration / 1000
+					this.player.state.status == AudioPlayerStatus.Playing
+						? this.player.state.playbackDuration / 1000
+						: 0
 				)}/${timeString(
 					currentSong?.duration || 0
 				)} ${this.generateStaticSeekBar()}`

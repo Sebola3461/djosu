@@ -158,8 +158,10 @@ export class DjOsu extends Client {
 	}
 
 	private loadFFMPEG() {
-		process.env.FFMPEG_PATH = path.resolve("./bin/ffmpeg.exe");
-		process.env.FFMPROBE_PATH = path.resolve("./bin/ffmprobe.exe");
+		if (process.env.OS == "Windows_NT") {
+			process.env.FFMPEG_PATH = path.resolve("./bin/ffmpeg.exe");
+			process.env.FFMPROBE_PATH = path.resolve("./bin/ffmprobe.exe");
+		}
 	}
 
 	private checkCacheFolders() {
