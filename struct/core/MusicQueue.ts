@@ -98,7 +98,7 @@ export class MusicQueue {
 				} else {
 					this.skipSong();
 
-					if (this.getSongs().length == this.getCurrentSongIndex()) {
+					if (this.getSongs().length >= this.getCurrentSongIndex()) {
 						this.sendClearQueueMessage();
 						this.finalizeQueue();
 						return;
